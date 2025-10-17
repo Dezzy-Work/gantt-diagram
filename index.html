@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Диаграмма Ганта - План разработки (10 спринтов)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .gantt-wrapper {
+            padding: 30px;
+            overflow-x: auto;
+        }
+
+        .gantt-chart {
+            display: grid;
+            grid-template-columns: 300px repeat(10, 100px);
+            gap: 0;
+            min-width: 1300px;
+        }
+
+        .gantt-header {
+            display: contents;
+        }
+
+        .task-label-header,
+        .sprint-header {
+            background: #f8f9fa;
+            padding: 15px;
+            font-weight: 600;
+            border: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .task-label-header {
+            justify-content: flex-start;
+            font-size: 15px;
+            color: #333;
+        }
+
+        .sprint-header {
+            font-size: 13px;
+            color: #667eea;
+        }
+
+        .gantt-row {
+            display: contents;
+        }
+
+        .task-label {
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            background: #fafafa;
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+            display: flex;
+            align-items: center;
+        }
+
+        .task-label .sprint-num {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 4px;
+            margin-right: 10px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .task-cell {
+            border: 1px solid #e0e0e0;
+            background: white;
+            position: relative;
+        }
+
+        .task-bar {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            height: 30px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 600;
+            color: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+        }
+
+        .task-bar:hover {
+            transform: translateY(-50%) scale(1.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        }
+
+        .task-bar.sprint-1 { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .task-bar.sprint-2 { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .task-bar.sprint-3 { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+        .task-bar.sprint-4 { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+        .task-bar.sprint-5 { background: linear-gradient(135deg, #30cfd0 0%, #330867 100%); }
+        .task-bar.sprint-6 { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); }
+        .task-bar.sprint-7 { background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); }
+        .task-bar.sprint-8 { background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); }
+        .task-bar.sprint-9 { background: linear-gradient(135deg, #ff6e7f 0%, #bfe9ff 100%); }
+        .task-bar.sprint-10 { background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%); }
+
+        .legend {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .legend h3 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .legend-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 12px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            font-size: 13px;
+        }
+
+        .legend-color {
+            width: 30px;
+            height: 20px;
+            border-radius: 4px;
+            margin-right: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+        }
+
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            .container {
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <div class="gantt-wrapper">
+            <div class="gantt-chart">
+                <!-- Header -->
+                <div class="gantt-header">
+                    <div class="task-label-header">Задачи / Спринты</div>
+                    <div class="sprint-header">20.10 - 26.10</div>
+                    <div class="sprint-header">27.10 - 02.11</div>
+                    <div class="sprint-header">2.11 - 9.11</div>
+                    <div class="sprint-header">9.11 - 16.11</div>
+                    <div class="sprint-header">16.11 - 23.11</div>
+                    <div class="sprint-header">23.11 - 30.11</div>
+                    <div class="sprint-header">30.11 - 7.12</div>
+                    <div class="sprint-header">7.12 - 14.12</div>
+                    <div class="sprint-header">14.12 - 21.12</div>
+                    <div class="sprint-header">21.12 - 27.12</div>
+                </div>
+
+                <!-- Sprint 1 -->
+                <div class="gantt-row">
+                    <div class="task-label" >
+                        <span class="sprint-num" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">S1</span>
+                        Исправление критических ошибок
+                    </div>
+                    <div class="task-cell">
+                        <div class="task-bar sprint-1" style="left: 5%; width: 90%;">Sprint 1</div>
+                    </div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                </div>
+
+                <!-- Sprint 2 -->
+                <div class="gantt-row">
+                    <div class="task-label">
+                        <span class="sprint-num">S2</span>
+                        Подготовка обучающего датасета
+                    </div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell">
+                        <div class="task-bar sprint-2" style="left: 5%; width: 90%;">Sprint 2</div>
+                    </div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                </div>
+
+                <!-- Sprint 3 -->
+                <div class="gantt-row">
+                    <div class="task-label">
+                        <span class="sprint-num">S3</span>
+                        Разработка GAN-дискриминатора
+                    </div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell">
+                        <div class="task-bar sprint-3" style="left: 5%; width: 90%;">Sprint 3</div>
+                    </div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                </div>
+
+                <!-- Sprint 4 -->
+                <div class="gantt-row">
+                    <div class="task-label">
+                        <span class="sprint-num">S4</span>
+                        Автоматизированное тестирование
+                    </div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell">
+                        <div class="task-bar sprint-4" style="left: 5%; width: 90%;">Sprint 4</div>
+                    </div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                </div>
+
+                <!-- Sprint 5 -->
+                <div class="gantt-row">
+                    <div class="task-label">
+                        <span class="sprint-num">S5</span>
+                        Интеграция с UI
+                    </div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell">
+                        <div class="task-bar sprint-5" style="left: 5%; width: 90%;">Sprint 5</div>
+                    </div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                </div>
+
+                <!-- Sprint 6 -->
+                <div class="gantt-row">
+                    <div class="task-label">
+                        <span class="sprint-num">S6</span>
+                        Облачное хранилище настроек
+                    </div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell">
+                        <div class="task-bar sprint-6" style="left: 5%; width: 90%;">Sprint 6</div>
+                    </div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                </div>
+
+                <!-- Sprint 7 -->
+                <div class="gantt-row">
+                    <div class="task-label">
+                        <span class="sprint-num">С7</span>
+                        Административная панель
+                    </div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell">
+                        <div class="task-bar sprint-7" style="left: 5%; width: 90%;">Sprint 7</div>
+                    </div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                </div>
+
+                <!-- Sprint 8 -->
+                <div class="gantt-row">
+                    <div class="task-label">
+                        <span class="sprint-num">S8</span>
+                        Система авторизации
+                    </div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell">
+                        <div class="task-bar sprint-8" style="left: 5%; width: 90%;">Sprint 8</div>
+                    </div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                </div>
+
+                <!-- Sprint 9 -->
+                <div class="gantt-row">
+                    <div class="task-label">
+                        <span class="sprint-num">S9</span>
+                        Аудит безопасности
+                    </div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell">
+                        <div class="task-bar sprint-9" style="left: 5%; width: 90%;">Sprint 9</div>
+                    </div>
+                    <div class="task-cell"></div>
+                </div>
+
+                <!-- Sprint 10 -->
+                <div class="gantt-row">
+                    <div class="task-label">
+                        <span class="sprint-num">S10</span>
+                        Деплой и финальное тестирование
+                    </div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell"></div>
+                    <div class="task-cell">
+                        <div class="task-bar sprint-10" style="left: 5%; width: 90%;">Sprint 10</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="legend">
+                <div class="legend-items">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);"></div>
+                        <span><strong>Спринт 1:</strong> Исправление багов</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);"></div>
+                        <span><strong>Спринт 2:</strong> Подготовка датасета</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);"></div>
+                        <span><strong>Спринт 3:</strong> Разработка GAN</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);"></div>
+                        <span><strong>Спринт 4:</strong> Тестирование</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);"></div>
+                        <span><strong>Спринт 5:</strong> Интеграция UI</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);"></div>
+                        <span><strong>Спринт 6:</strong> Облачное хранилище</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);"></div>
+                        <span><strong>Спринт 7:</strong> Админ-панель</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);"></div>
+                        <span><strong>Спринт 8:</strong> Авторизация</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: linear-gradient(135deg, #ff6e7f 0%, #bfe9ff 100%);"></div>
+                        <span><strong>Спринт 9:</strong> Аудит безопасности</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);"></div>
+                        <span><strong>Спринт 10:</strong> Деплой и тестирование</span>
+                    </div>
+                </div>
+
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-value">10</div>
+                        <div class="stat-label">Спринтов</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">10</div>
+                        <div class="stat-label">Недель</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">40+</div>
+                        <div class="stat-label">Задач</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
